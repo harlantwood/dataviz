@@ -38,6 +38,13 @@ var vis = d3.select("#body").append("svg:svg")
 //   update(root);
 // });
 
+function toggleAll(d) {
+  if (d.children) {
+    d.children.forEach(toggleAll);
+    toggle(d);
+  }
+}
+
 function update(source) {
   var duration = d3.event && d3.event.altKey ? 5000 : 500;
 
