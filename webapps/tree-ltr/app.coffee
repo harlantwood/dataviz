@@ -1,3 +1,40 @@
+DEMO_HASH = 'QmZq1TFx4RF1LbNb9RmEMZxaXpB9UjcFTLRCT4GHzy3Kk2'
+
+app = ->
+  hash = window.location.hash[1..]
+  console.log hash
+  if hash.length > 0
+    render hash
+  else
+    window.location.hash = '#'+DEMO_HASH
+    window.location.reload()
+
+render = (hash) ->
+  API_REFS_FORMAT = encodeURIComponent '<src> <dst> <linkname>'
+  d3.xhr "/api/v0/refs?arg=#{hash}&recursive&format=#{API_REFS_FORMAT}", (error, xhr) ->
+    data = xhr.responseText
+
+    dict = {}
+
+    refApiPattern = /"Ref": "(\S+) (\S+) (\S+)\\n"/g
+    while match = refApiPattern.exec data
+      [whole, src, dst, linkname] = match
+      dict[src] ?= []
+      dict[src].push
+        Hash: dst
+        Name: linkname
+
+    children = getDecendants hash, dict
+
+    @root = children: children
+    #    console.log JSON.stringify @root, null, 2
+
+    @root.x0 = h / 2
+    @root.y0 = 0
+
+    @root.children.forEach toggleAll
+    update @root
+
 getDecendants = (ref, dict) ->
   throw new Error unless ref? and dict?
   children = dict[ref]
@@ -8,30 +45,7 @@ getDecendants = (ref, dict) ->
       child.children = decendants if decendants?
     children
 
-ref = 'QmZq1TFx4RF1LbNb9RmEMZxaXpB9UjcFTLRCT4GHzy3Kk2'
-d3.xhr "/api/v0/refs?arg=#{ref}&recursive&format=%3Csrc%3E%20%3Cdst%3E%20%3Clinkname%3E", (error, xhr) ->
-  data = xhr.responseText
-
-  dict = {}
-
-  refApiPattern = /"Ref": "(\S+) (\S+) (\S+)\\n"/g
-  while match = refApiPattern.exec data
-    [whole, src, dst, linkname] = match
-    dict[src] ?= []
-    dict[src].push
-      Hash: dst
-      Name: linkname
-
-  children = getDecendants ref, dict
-
-  @root = children: children
-  console.log JSON.stringify @root, null, 2
-
-  @root.x0 = h / 2
-  @root.y0 = 0
-
-  # @root.children.forEach toggleAll
-  update @root
+app()
 
 
 
